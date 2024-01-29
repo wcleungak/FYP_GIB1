@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 import time
+from scipy.signal import savgol_filter
 
 # Set GPIO mode to BCM
 GPIO.setmode(GPIO.BCM)
@@ -16,7 +17,7 @@ GPIO.setup(ECHO_left, GPIO.IN)
 GPIO.setup(TRIG_bottom, GPIO.OUT)
 GPIO.setup(ECHO_bottom, GPIO.IN)
 
-def get_left_distance():
+def left_distance():
     # Send a 10us pulse to trigger the sensor
     GPIO.output(TRIG_left, True)
     time.sleep(0.00001)
@@ -33,16 +34,15 @@ def get_left_distance():
     while GPIO.input(ECHO_left) == 1:
         pulse_end = time.time()
 
-
     # Calculate the duration of the pulse
     pulse_duration = pulse_end - pulse_start
 
     # Calculate the distance in centimeters
-    distance = round(pulse_duration * 17150, 2)
+    distance = pulse_duration * 17150
 
     return distance
 
-def get_bottom_distance():
+def bottom_distance():
     # Send a 10us pulse to trigger the sensor
     GPIO.output(TRIG_bottom, True)
     time.sleep(0.00001)
@@ -59,30 +59,36 @@ def get_bottom_distance():
     while GPIO.input(ECHO_bottom) == 1:
         pulse_end = time.time()
 
-
     # Calculate the duration of the pulse
     pulse_duration = pulse_end - pulse_start
 
     # Calculate the distance in centimeters
-    distance = round(pulse_duration * 17150, 2)
+    distance = pulse_duration * 17150
 
     return distance
 
-# # Print the distance in centimeters
-# print("Left Distance: %.2f cm" % get_left_distance())
-# print("Bottom Distance: %.2f cm" % get_left_distance())
+def filter_distance(distance_func, num_samples=10, filter_window=5, filter_polyorder=2, delay_between_samples=0.05):
+    # Collect distance samples
+    samples = []
+    for _ in range(num_samples):
+        samples.append(distance_func())
+        time.sleep(delay_between_samples)
+    samples = [s for s in samples if s is not None]  # Remove None values
+    if not samples:  # If all samples are None, return None
+        return None
 
-# if __name__ == '__main__':
-#     try:
-#         while True:
-#             dist_left = get_left_distance()
-#             dist_bottom = get_bottom_distance()
-#             print ("Measured Left Distance = %.1f cm" % dist_left)
-#             print ("Measured Bottom Distance = %.1f cm" % dist_bottom)
-#             time.sleep(1)
- 
-#         # Reset by pressing CTRL + C
-#     except KeyboardInterrupt:
-#         print("Measurement stopped by User")
-#         # Clean up GPIO pins
-#         GPIO.cleanup()
+    # Apply the Savitzky-Golay filter
+    filtered_samples = savgol_filter(samples, filter_window, filter_polyorder)
+
+    # Return the average of the filtered samples
+    return sum(filtered_samples) / len(filtered_samples)
+
+def get_left_distance():
+    return filter_distance(left_distance)
+     
+
+def get_bottom_distance():
+    return filter_distance(bottom_distance)
+
+
+    
