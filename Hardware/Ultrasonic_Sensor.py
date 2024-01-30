@@ -1,6 +1,6 @@
 import RPi.GPIO as GPIO
 import time
-from scipy.signal import savgol_filter
+from scipy.signal import medfilt
 
 # Set GPIO mode to BCM
 GPIO.setmode(GPIO.BCM)
@@ -67,7 +67,7 @@ def bottom_distance():
 
     return distance
 
-def filter_distance(distance_func, num_samples=10, filter_window=5, filter_polyorder=2, delay_between_samples=0.05):
+def filter_distance(distance_func, num_samples=10, kernel_size=9, delay_between_samples=0.05):
     # Collect distance samples
     samples = []
     for _ in range(num_samples):
@@ -77,11 +77,15 @@ def filter_distance(distance_func, num_samples=10, filter_window=5, filter_polyo
     if not samples:  # If all samples are None, return None
         return None
 
-    # Apply the Savitzky-Golay filter
-    filtered_samples = savgol_filter(samples, filter_window, filter_polyorder)
+    print(samples)
+
+    # Apply the medfilt filter
+    filtered_samples = medfilt(samples, kernel_size)
+
+    print(filtered_samples)
 
     # Return the average of the filtered samples
-    return sum(filtered_samples) / len(filtered_samples)
+    return round(sum(filtered_samples) / len(filtered_samples))
 
 def get_left_distance():
     return filter_distance(left_distance)
