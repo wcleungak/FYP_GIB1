@@ -1,55 +1,52 @@
+'''
+kit.stepper1 --> right motor (FORWARD == forward, BACKWARD == backward)
+kit.stepper2 --> left motor (FORWARD == backward, BACKWARD == forward)
+wheel diameter = 6.8cm
+'''
+
 # Below imports all neccessary packages to make this Python Script run
 import time
 import board
+import math
 from adafruit_motor import stepper
 from adafruit_motorkit import MotorKit
 
 # Below initialises the variable kit to be our I2C Connected Adafruit Motor HAT
 kit = MotorKit(i2c=board.I2C())
 
-# The below loop will run 500 times. Each loop it will move one step, clockwise, then pause for 0.01 seconds
-# This will almost look like a smooth rotation.
+def distance_to_step(distance):
+    return round(distance / (6.8 * math.pi) * 200) # convert cm to motor step 
 
-def left_motor_forward():
-    for i in range(50):
-        kit.stepper1.onestep(direction=stepper.FORWARD, style=stepper.DOUBLE)
-        time.sleep(0.01)
-    kit.stepper1.release()
+def angle_to_step(angle): # Task - convent angle to step
+    return
 
-def left_motor_backward():
-    for i in range(50):
-        kit.stepper1.onestep(direction=stepper.BACKWARD, style=stepper.DOUBLE)
-        time.sleep(0.01)
-    kit.stepper1.release()
-
-def right_motor_forward():
-    for i in range(50):
-        kit.stepper2.onestep(direction=stepper.BACKWARD, style=stepper.DOUBLE)
-        time.sleep(0.01)
-    kit.stepper2.release()
-
-def right_motor_backward():
-    for i in range(50):
-        kit.stepper2.onestep(direction=stepper.FORWARD, style=stepper.DOUBLE)
-        time.sleep(0.01)
-    kit.stepper2.release()
-
-
-# for i in range(100):
-
-#     kit.stepper1.onestep(direction=stepper.BACKWARD)
-#     kit.stepper2.onestep(direction=stepper.FORWARD)
-#     time.sleep(0.01)
-
-# The below loop will run 500 times. Each loop it will move two step, anti-Clockwise, then pause for 0.01 seconds
-# This will almost look like a smooth rotation.
-
-# for i in range(100):
+def run_motor(distance, rmt_direction, lmt_direction, turning=False):
+    if not turning:
+        step = distance_to_step(distance) # Conversion function for cm to step
+        # print("distance: ", distance, " cm, step: ", step, " step")
+    else:
+        step = distance # Task - Conversion function for angle to step
     
-#     kit.stepper1.onestep(direction=stepper.FORWARD, style=stepper.DOUBLE)
-#     kit.stepper2.onestep(direction=stepper.BACKWARD, style=stepper.DOUBLE)
-#     time.sleep(0.01)  
+    for i in range(step):
+        kit.stepper1.onestep(direction=rmt_direction)
+        kit.stepper2.onestep(direction=lmt_direction)
+        time.sleep(0.01)
+    kit.stepper1.release()
+    kit.stepper2.release()
 
-# The below line will de-energise the Stepper Motor so it can freely move
-# kit.stepper1.release()
-# kit.stepper2.release()
+
+def forward(distance):
+    run_motor(distance, stepper.FORWARD, stepper.BACKWARD)
+
+def backward(distance):
+    run_motor(distance, stepper.BACKWARD, stepper.FORWARD)
+
+def turn_left(distance):
+    run_motor(distance, stepper.FORWARD, stepper.FORWARD, True)
+
+def turn_right(distance):
+    run_motor(distance, stepper.BACKWARD, stepper.BACKWARD, True)
+
+def release_motors():
+    kit.stepper1.release()
+    kit.stepper2.release()

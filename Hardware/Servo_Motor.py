@@ -24,6 +24,12 @@ def pen_control(angle):
    pwm.ChangeDutyCycle(0)
    sleep(0.5)
 
+def penUp():
+   pen_control(110)
+
+def penDown():
+   pen_control(0)
+
 # for i in range(0,181):
 #    sig=(i/18)+2  
 #    pwm.ChangeDutyCycle(sig)  
